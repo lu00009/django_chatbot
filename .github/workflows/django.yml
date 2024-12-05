@@ -1,4 +1,4 @@
-name: Django CI/CD
+name: Deploy Static Files
 
 on:
   push:
@@ -23,15 +23,24 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Collect Static Files
+    - name: Create .env file
       run: |
-        python manage.py collectstatic --noinput
+        echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" > .env
+        echo "DEBUG=False" >> .env
+        
+    - name: Collect Static Files
+      run: python manage.py collectstatic --noinput
       env:
         DJANGO_SETTINGS_MODULE: django_chatbot.settings
+        
+    - name: Create index.html
+      run: |
+        mkdir -p staticfiles
+        echo "<html><head><title>Django Chatbot</title></head><body><h1>Django Chatbot</h1><p>This is a static page for the Django Chatbot project.</p></body></html>" > staticfiles/index.html
         
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./staticfiles
-        enable_jekyll: true
+        enable_jekyll: false
